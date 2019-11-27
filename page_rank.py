@@ -1,5 +1,8 @@
 import os
 import time
+import pandas as pd
+import networkx as nx
+import matplotlib.pyplot as plt
 from progress import Progress
 
 WEB_DATA = os.path.join(os.path.dirname(__file__), 'school_web.txt')
@@ -22,11 +25,24 @@ def load_graph(fd):
     Each line in the file contains two white space seperated URLs and
     denotes a directed edge (link) from the first URL to the second.
     """
+    # Initiate graph dictionary
+    graph = {}
     # Iterate through the file line by line
     for line in fd:
         # And split each line into two URLs
         node, target = line.split()
-        raise RuntimeError("This function is not implemented yet.")
+        graph.setdefault('from', [])
+        graph.setdefault('to', [])
+        graph['from'].append(node)
+        graph['to'].append(target)
+
+    data_frame = pd.DataFrame(graph)
+    G = nx.from_pandas_edgelist(data_frame, 'from', 'to', create_using=nx.DiGraph())
+
+    nx.draw(G, arrows=True)
+
+    plt.show()
+    return graph
 
 
 def print_stats(graph):
@@ -34,7 +50,7 @@ def print_stats(graph):
         raise RuntimeError("This function is not implemented yet.")
 
 
-def stochastic_page_rank(graph, n_iter=1_000_000, n_steps=100):
+def stochastic_page_rank(graph, n_iter=1000000, n_steps=100):
     """Stochastic PageRank estimation
 
     Parameters:
