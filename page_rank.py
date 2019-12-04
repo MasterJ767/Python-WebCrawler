@@ -1,5 +1,6 @@
 import os
 import time
+import random
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -27,27 +28,35 @@ def load_graph(fd):
     """
     # Initiate graph dictionary
     graph = {}
+    relate = {}
     # Iterate through the file line by line
     for line in fd:
         # And split each line into two URLs
         node, target = line.split()
+        # Put nodes into the 'from' list
         graph.setdefault('from', [])
+        # Put targets into the 'to' list
         graph.setdefault('to', [])
         graph['from'].append(node)
         graph['to'].append(target)
 
+    # Create directional graph
     data_frame = pd.DataFrame(graph)
     G = nx.from_pandas_edgelist(data_frame, 'from', 'to', create_using=nx.DiGraph())
 
     nx.draw(G, arrows=True)
 
+    # Display directional graph
     plt.show()
     return graph
 
 
 def print_stats(graph):
-        """Print number of nodes and edges in the given graph"""
-        raise RuntimeError("This function is not implemented yet.")
+    """Print number of nodes and edges in the given graph"""
+    node_amount = len(set(graph['from']).union(set(graph['to'])))
+    edge_amount = len(graph['from'])
+
+    print(f'There are {node_amount} nodes and {edge_amount} edges in this graph.')
 
 
 def stochastic_page_rank(graph, n_iter=1000000, n_steps=100):
@@ -65,7 +74,22 @@ def stochastic_page_rank(graph, n_iter=1000000, n_steps=100):
     a random walk that starts on a random node will after n_steps end
     on each node of the given graph.
     """
-    raise RuntimeError("This function is not implemented yet.")
+
+    # Set number of hits to 0 for all nodes
+    hit_count = {}
+    for node in graph['from']:
+        hit_count.setdefault(node, 0)
+    for node in graph['to']:
+        hit_count.setdefault(node, 0)
+
+    for i in range(n_iter):
+        current_node = random.choice(graph['from'])
+        current_node_index = graph['from'].index(current_node)
+        for j in range(n_steps):
+            current_node = random.choice([n for n in graph['from'] if n == graph['from'][current_node_index]])
+        hit_count[current_node] += (1/n_iter)
+
+    return hit_count
 
 
 def distribution_page_rank(graph, n_iter=100):
@@ -81,7 +105,30 @@ def distribution_page_rank(graph, n_iter=100):
     This function estimates the Page Rank by iteratively calculating
     the probability that a random walker is currently on any node.
     """
-    raise RuntimeError("This function is not implemented yet.")
+
+    # Set number of hits to 1/number of nodes for all nodes
+    hit_count = {}
+    temp_hit_count = {}
+    base_hit = 1 / len(set(graph['from']).union(set(graph['to'])))
+    for node in graph['from']:
+        hit_count.setdefault(node, base_hit)
+        temp_hit_count.setdefault(node, 0)
+    for node in graph['to']:
+        hit_count.setdefault(node, base_hit)
+        temp_hit_count.setdefault(node, 0)
+
+    for i in range(n_iter):
+        for node in graph['from']:
+            out_degree = graph['from'].count(node)
+            if out_degree == 0:
+                pass
+            else:
+                p = 1 / out_degree
+                target_indices = [graph['from'].index(n) for n in graph['from'] if n == node]
+                for index in target_indices:
+                    temp_hit_count[graph['to'][index]] += p
+    
+    return hit_count
 
 
 def main():
